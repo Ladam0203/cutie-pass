@@ -51,8 +51,22 @@ class Repository:
         ''', (name, username, password))
         self.conn.commit()
 
+    def update_credential(self, id, name, username, password):
+        self.cursor.execute('''
+            UPDATE credentials
+            SET name = ?, encrypted_username = ?, encrypted_password = ?
+            WHERE id = ?
+        ''', (name, username, password, id))
+        self.conn.commit()
+
+    def delete_credential(self, id):
+        self.cursor.execute('''
+            DELETE FROM credentials
+            WHERE id = ?
+        ''', (id,))
+        self.conn.commit()
+
     def get_all_credentials(self):
-        self.cursor.execute('SELECT name, encrypted_username, encrypted_password FROM credentials')
-        # Return tuples of (name, encrypted_username, encrypted_password)
+        self.cursor.execute('SELECT * FROM credentials')
         return self.cursor.fetchall()
 

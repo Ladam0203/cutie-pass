@@ -1,6 +1,7 @@
-from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QListWidget, QListWidgetItem, QPushButton, QMessageBox, QWidget, \
-    QDialog
+from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QListWidget, QListWidgetItem, QPushButton, QMessageBox, QWidget, QDialog
 from ui.add_credential_dialog import AddCredentialDialog  # Import the dialog
+from ui.edit_credential_dialog import EditCredentialDialog  # Import the edit dialog
+
 
 class CredentialsPage(QMainWindow):
     def __init__(self, repository, security, master_password):
@@ -46,22 +47,22 @@ class CredentialsPage(QMainWindow):
         self.credentials_list.clear()
 
         # Fetch the credentials from the repository
-        credentials = self.repository.get_all_credentials()  # Assuming this returns a list of tuples: (name, encrypted_username, encrypted_password)
+        credentials = self.repository.get_all_credentials()  # Assuming this returns a list of tuples: (id, name, encrypted_username, encrypted_password)
 
         print(credentials)
 
         if credentials:
-            for name, encrypted_username, encrypted_password in credentials:
+            for id, name, encrypted_username, encrypted_password in credentials:
                 # Create a QListWidgetItem for each credential
                 item = QListWidgetItem(name)
-                item.setData(1, (encrypted_username, encrypted_password))  # Store the encrypted credentials as user data
+                item.setData(1, (id, encrypted_username, encrypted_password))  # Store the ID and encrypted credentials as user data
                 self.credentials_list.addItem(item)
         else:
             self.credentials_list.addItem("No credentials added yet.")
 
     def reveal_credentials_from_list(self, item):
-        # Get the encrypted username and password from the item
-        encrypted_username, encrypted_password = item.data(1)
+        # Get the ID, encrypted username, and password from the item
+        credential_id, encrypted_username, encrypted_password = item.data(1)
 
         # Fetch the stored master password data
         result = self.repository.get_master_password_data()
@@ -76,8 +77,11 @@ class CredentialsPage(QMainWindow):
             decrypted_username = self.security.decrypt_data(encrypted_username, encryption_key, nonce)
             decrypted_password = self.security.decrypt_data(encrypted_password, encryption_key, nonce)
 
-            # Display the decrypted username and password
-            QMessageBox.information(self, "Decrypted Credential",
-                                    f"Username: {decrypted_username}\nPassword: {decrypted_password}")
+            # Open the edit credential dialog with decrypted credentials
+            edit_dialog = EditCredentialDialog(self.repository, self.security, self.master_password,
+                                                credential_id, item.text(), decrypted_username, decrypted_password, self)
+            if edit_dialog.exec() == QDialog.DialogCode.Accepted:
+                # If the dialog was accepted, refresh the credentials list
+                self.update_credentials_view()
         else:
             QMessageBox.warning(self, "Error", "Unable to fetch master password data.")
