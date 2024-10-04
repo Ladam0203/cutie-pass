@@ -4,6 +4,14 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushB
 from repository import Repository
 from security import Security
 
+import sys
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QMessageBox
+from PyQt6.QtCore import Qt
+
+from repository import Repository
+from security import Security
+from ui.credentials_page import CredentialsPage
+
 
 class CutiePass(QMainWindow):
     def __init__(self, repository, security):
@@ -59,6 +67,9 @@ class CutiePass(QMainWindow):
         self.repository.save_master_password_data(encrypted_token, salt, nonce)
         print("Master password set")
 
+        # Switch to credentials page
+        self.open_credentials_page()
+
     def verify_master_password(self):
         entered_password = self.password_input.text()
 
@@ -68,11 +79,18 @@ class CutiePass(QMainWindow):
             encrypted_token, salt, nonce = result
             can_decrypt = self.security.can_decrypt_master_password_data(encrypted_token, salt, nonce, entered_password)
 
-            print("Password is correct" if can_decrypt else "Password is incorrect")
-            return can_decrypt
+            if can_decrypt:
+                print("Password is correct")
+                self.open_credentials_page()
+            else:
+                print("Password is incorrect")
+                QMessageBox.warning(self, "Error", "Incorrect password")
 
-        print("No master password set")
-        return False
+    def open_credentials_page(self):
+        # Open the Credentials Page, passing the master password
+        self.credentials_page = CredentialsPage(self.repository, self.security, self.password_input.text())
+        self.credentials_page.show()
+        self.close()  # Close the login window
 
 def main():
     repository = Repository()

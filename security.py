@@ -5,10 +5,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.backends import default_backend
 
 class Security:
-    def generate_master_password_data(self, password):
-        # Generate a random salt
-        salt = os.urandom(16)
-
+    def derive_key(self, password, salt):
         # Derive a key from the password using PBKDF2
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -18,6 +15,14 @@ class Security:
             backend=default_backend()
         )
         key = kdf.derive(password.encode())
+        return key
+
+    def generate_master_password_data(self, password):
+        # Generate a salt
+        salt = os.urandom(16)
+
+        # Derive a key from the password using the salt
+        key = self.derive_key(password, salt)
 
         # Generate a token to encrypt for verification purposes
         token = b'verification'
@@ -31,16 +36,9 @@ class Security:
 
         return encrypted_token, salt, nonce
 
-    def can_decrypt_master_password_data(self, encrypted_token, salt, nonce, input):
+    def can_decrypt_master_password_data(self, encrypted_token, salt, nonce, entered_password):
         # Derive a key from the entered password using the stored salt
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
-        )
-        key = kdf.derive(input.encode())
+        key = self.derive_key(entered_password, salt)
 
         # Try to decrypt the token using the derived key
         aesgcm = AESGCM(key)
@@ -53,3 +51,13 @@ class Security:
             pass
 
         return False
+
+    def encrypt_data(self, data, key, nonce):
+        aesgcm = AESGCM(key)
+        encrypted_data = aesgcm.encrypt(nonce, data.encode(), None)
+        return encrypted_data
+
+    def decrypt_data(self, encrypted_data, key, nonce):
+        aesgcm = AESGCM(key)
+        decrypted_data = aesgcm.decrypt(nonce, encrypted_data, None)
+        return decrypted_data.decode()

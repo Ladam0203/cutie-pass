@@ -22,9 +22,9 @@ class Repository:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS credentials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                encrypted_token TEXT,
-                salt TEXT,
-                nonce TEXT
+                name TEXT,
+                encrypted_username TEXT,
+                encrypted_password TEXT
             )
         ''')
         self.conn.commit()
@@ -43,4 +43,16 @@ class Repository:
     def get_master_password_data(self):
         self.cursor.execute('SELECT encrypted_token, salt, nonce FROM settings WHERE id = 1')
         return self.cursor.fetchone()
+
+    def save_credential(self, name, username, password):
+        self.cursor.execute('''
+            INSERT INTO credentials (name, encrypted_username, encrypted_password)
+            VALUES (?, ?, ?)
+        ''', (name, username, password))
+        self.conn.commit()
+
+    def get_all_credentials(self):
+        self.cursor.execute('SELECT name, encrypted_username, encrypted_password FROM credentials')
+        # Return tuples of (name, encrypted_username, encrypted_password)
+        return self.cursor.fetchall()
 
