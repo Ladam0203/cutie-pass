@@ -52,34 +52,33 @@ class CredentialsPage(QMainWindow):
         print(credentials)
 
         if credentials:
-            for id, name, encrypted_username, encrypted_password in credentials:
+            for id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce in credentials:
                 # Create a QListWidgetItem for each credential
                 item = QListWidgetItem(name)
-                item.setData(1, (id, encrypted_username, encrypted_password))  # Store the ID and encrypted credentials as user data
+                item.setData(1, (id))  # Store the credential ID and name in the item
                 self.credentials_list.addItem(item)
         else:
             self.credentials_list.addItem("No credentials added yet.")
 
     def reveal_credentials_from_list(self, item):
-        # Get the ID, encrypted username, and password from the item
-        credential_id, encrypted_username, encrypted_password = item.data(1)
+        # Get the credential ID from the item
+        id = item.data(1)
 
-        # Fetch the stored master password data
-        result = self.repository.get_master_password_data()
-
+        # Fetch the encrypted username and password from the repository
+        result = self.repository.get_credential_by_id(id)
         if result:
-            encrypted_token, salt, nonce = result
-
-            # Derive encryption key from the master password
-            encryption_key = self.security.derive_key(self.master_password, salt)
+            id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce = result
 
             # Decrypt the username and password
-            decrypted_username = self.security.decrypt_data(encrypted_username, encryption_key, nonce)
-            decrypted_password = self.security.decrypt_data(encrypted_password, encryption_key, nonce)
+            username_decryption_key, _ = self.security.derive_key(self.master_password, username_salt)
+            decrypted_username = self.security.decrypt_data(encrypted_username, username_decryption_key, username_nonce)
+
+            password_decryption_key, _ = self.security.derive_key(self.master_password, password_salt)
+            decrypted_password = self.security.decrypt_data(encrypted_password, password_decryption_key, password_nonce)
 
             # Open the edit credential dialog with decrypted credentials
             edit_dialog = EditCredentialDialog(self.repository, self.security, self.master_password,
-                                                credential_id, item.text(), decrypted_username, decrypted_password, self)
+                                                id, name, decrypted_username, decrypted_password, self)
             if edit_dialog.exec() == QDialog.DialogCode.Accepted:
                 # If the dialog was accepted, refresh the credentials list
                 self.update_credentials_view()

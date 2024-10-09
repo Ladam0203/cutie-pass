@@ -35,11 +35,11 @@ class AddCredentialDialog(QDialog):
         self.layout = QVBoxLayout()
 
         # Name input field with label
-        name_label = QLabel("Name")
+        name_label = QLabel("Name (of the service)")
         self.layout.addWidget(name_label)
 
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Enter your name")
+        self.name_input.setPlaceholderText("Enter the name of the service")
         self.layout.addWidget(self.name_input)
 
         # Username input field with label
@@ -130,21 +130,16 @@ class AddCredentialDialog(QDialog):
         password = self.password_input.text()
 
         if name and username and password:
-            result = self.repository.get_master_password_data()
+            username_encryption_key, username_salt = self.security.derive_key(self.master_password)
+            encrypted_username, username_nonce = self.security.encrypt_data(username, username_encryption_key)
 
-            if result:
-                encrypted_token, salt, nonce = result
-                encryption_key = self.security.derive_key(self.master_password, salt)
+            password_encryption_key, password_salt = self.security.derive_key(self.master_password)
+            encrypted_password, password_nonce = self.security.encrypt_data(password, password_encryption_key)
 
-                encrypted_username = self.security.encrypt_data(username, encryption_key, nonce)
-                encrypted_password = self.security.encrypt_data(password, encryption_key, nonce)
+            self.repository.save_credential(name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce)
+            print(f"Credential for {name} saved and encrypted.")
 
-                self.repository.save_credential(name, encrypted_username, encrypted_password)
-                print(f"Credential for {name} saved and encrypted.")
-
-                self.accept()
-            else:
-                QMessageBox.warning(self, "Error", "Unable to fetch master password data.")
+            self.accept()
         else:
             QMessageBox.warning(self, "Input Error", "Please fill out all fields.")
 

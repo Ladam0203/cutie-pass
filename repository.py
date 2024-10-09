@@ -24,7 +24,11 @@ class Repository:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 encrypted_username TEXT,
-                encrypted_password TEXT
+                username_salt TEXT,
+                username_nonce TEXT,
+                encrypted_password TEXT,
+                password_salt TEXT,
+                password_nonce TEXT
             )
         ''')
         self.conn.commit()
@@ -44,19 +48,19 @@ class Repository:
         self.cursor.execute('SELECT encrypted_token, salt, nonce FROM settings WHERE id = 1')
         return self.cursor.fetchone()
 
-    def save_credential(self, name, username, password):
+    def save_credential(self, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce):
         self.cursor.execute('''
-            INSERT INTO credentials (name, encrypted_username, encrypted_password)
-            VALUES (?, ?, ?)
-        ''', (name, username, password))
+            INSERT INTO credentials (name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce))
         self.conn.commit()
 
-    def update_credential(self, id, name, username, password):
+    def update_credential(self, id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce):
         self.cursor.execute('''
             UPDATE credentials
-            SET name = ?, encrypted_username = ?, encrypted_password = ?
+            SET name = ?, encrypted_username = ?, username_salt = ?, username_nonce = ?, encrypted_password = ?, password_salt = ?, password_nonce = ?
             WHERE id = ?
-        ''', (name, username, password, id))
+        ''', (name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce, id))
         self.conn.commit()
 
     def delete_credential(self, id):
@@ -67,6 +71,13 @@ class Repository:
         self.conn.commit()
 
     def get_all_credentials(self):
-        self.cursor.execute('SELECT * FROM credentials')
+        self.cursor.execute('SELECT id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce FROM credentials')
         return self.cursor.fetchall()
+
+    def get_credential_by_id(self, id):
+        self.cursor.execute(
+            'SELECT id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce FROM credentials WHERE id = ?',
+            (id,))
+        return self.cursor.fetchone()
+
 
