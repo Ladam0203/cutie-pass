@@ -1,4 +1,5 @@
 import os
+import time
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -24,8 +25,9 @@ class Security:
         # Derive a key from the password using the salt
         key = self.derive_key(password, salt)
 
-        # Generate a token to encrypt for verification purposes
-        token = b'verification'
+        # Generate a token: timestamp + 'verification' text
+        timestamp = str(int(time.time() * 1000))  # Millisecond accuracy
+        token = (timestamp + "::verification").encode()  # Delimiter between timestamp and verification text
         aesgcm = AESGCM(key)
 
         # Generate nonce
@@ -43,9 +45,12 @@ class Security:
         # Try to decrypt the token using the derived key
         aesgcm = AESGCM(key)
         try:
-            decrypted_token = aesgcm.decrypt(nonce, encrypted_token, None)
+            decrypted_token = aesgcm.decrypt(nonce, encrypted_token, None).decode()
 
-            if decrypted_token == b'verification':
+            # Split the decrypted token by the delimiter
+            timestamp, verification = decrypted_token.split("::")
+
+            if verification == 'verification':
                 return True  # Password is correct
         except Exception as e:
             pass

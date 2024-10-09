@@ -17,15 +17,23 @@ class EditCredentialDialog(QDialog):
 
         layout = QVBoxLayout()
 
-        form_layout = QFormLayout()
+        # Name
+        name_label = QLabel("Name")
         self.name_input = QLineEdit(self.credential_name)
-        self.username_input = QLineEdit(username)
-        self.password_input = QLineEdit(password)
-        form_layout.addRow(QLabel("Name:"), self.name_input)
-        form_layout.addRow(QLabel("Username:"), self.username_input)
-        form_layout.addRow(QLabel("Password:"), self.password_input)
+        layout.addWidget(name_label)
+        layout.addWidget(self.name_input)
 
-        layout.addLayout(form_layout)
+        # Username
+        username_label = QLabel("Username")
+        self.username_input = QLineEdit(username)
+        layout.addWidget(username_label)
+        layout.addWidget(self.username_input)
+
+        # Password
+        password_label = QLabel("Password")
+        self.password_input = QLineEdit(password)
+        layout.addWidget(password_label)
+        layout.addWidget(self.password_input)
 
         # Buttons for Save and Delete
         self.save_button = QPushButton("Save")
