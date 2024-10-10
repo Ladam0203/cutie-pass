@@ -22,7 +22,7 @@ class CutiePass(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Password Manager")
+        self.setWindowTitle("CutiePass")
         self.setGeometry(300, 300, 400, 200)
 
         # Layout and widgets
