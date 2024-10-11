@@ -33,7 +33,7 @@ python main.py
 ![Adding a credential](screenshots/add_credential.png)
 
 ## Viewing credentials
-![Viewing credentials](screenshots/view_credentials.png)
+![Viewing credentials](screenshots/credentials.png)
 
 ## Editing a credential
 ![Editing a credential](screenshots/edit_credential.png)
