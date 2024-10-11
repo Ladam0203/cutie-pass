@@ -47,32 +47,39 @@ This extends to an actor having access to the database file, the user's device, 
 
 Upon the first start, the user asked to provide a master password. 
 
-* The master password is a common mechanism to unlock the vault in password managers. It is specific to the user and thus can safely authenticate the user to access the vault. *
+* The master password is a common mechanism to unlock the vault in password managers. It is specific to the user and thus can safely authenticate the user to access the vault. 
 
 From this master password a key is derived via PBKDF2 to encrypt a predefined data ([timestamp]::verification), via AESGCM to save whether a master password has been set already for the application. 
 
-* The key derivation function ensures that the key is not easily brute-forced. The timestamp is joined to the known data to ensure that the hash is unique and cannot be computed backwards. *
+* The key derivation function ensures that the key is not easily brute-forced. 
+* Additional salt is used to make the key derivation unique each time, even if the master password is the same.
+* The timestamp is joined to the known data to ensure that the hash is unique and cannot be computed backwards, even when the known data is exposed.
 
-Each time the user would like to unlock the vault, they have to provide their master password. The data in the settings table is then attempted to be decrypted with the password. If the password is right, then the data can be decrypted and the vault unlocks.
+Each time the user would like to unlock the vault, they have to provide their master password. 
+The data in the settings table is then attempted to be decrypted with the password. If the password is right, then the data can be decrypted and the vault unlocks.
 
-* The master password is not stored in the database. The key is derived from the master password and used to encrypt the data. This is the key only lives in the user's head. AESGCM is used to check whether the master password is correct (meaning the key is correct), which can be concluded if the data can be decrypted. *
+* The master password is not stored in the database. This is so that key only lives in the user's head. 
+* The key is derived from the master password and used to encrypt the data. AESGCM is used to check whether the master password is correct (meaning the key is correct), which can be concluded if the data can be decrypted. 
 
 ## Managing credentials
 
 The user can add credentials to the vault via clicking the "Add Credential" button.
 The credentials are encrypted using the master password as a key. 
-* This binds the credentials to the user and ensures that only the user can access the credentials. *
+Each credential and its corresponding data are encrypted and salted separately and uniquely.
+* This binds the credentials to the user and ensures that only the user can access the credentials. 
+* Additional salt is applied to the username and password to make the encryption unique each time, even if the credentials are the same. The nonce is also unique.
+
 The credentials are stored in the database in an encrypted form. 
-* This ensures that the credentials are not stored in plain text and are not easily accessible to unauthorized users. *
-Each credential and its corresponding data are encrypted and salted separately and uniquely. 
-* This ensures that each credential is encrypted with a unique key and salt, making it harder for an attacker to decrypt the credentials. *
+* Credentials stored in plain text would be easily accessible to an attacker.
+
 The user may generate a password for a credential with a cryptographically secure random generator.
-* This ensures that the generated password is secure and not easily guessable, nor it can be regenerated. *
+* This ensures that the generated password is secure and not easily guessable, nor it can be regenerated. 
+
 The user may modify the character set, length, and whether to include special characters in the generated password but is provided with a safe default.
-* This allows the user to customize the generated password to their needs if needed, but provides safety out of the box. *
+* This allows the user to customize the generated password to their needs if needed, but provides safety out of the box. 
 
 The data is decrypted when the user wants to view the credentials. (The name of the credential is stored in plain text, as it is not deemed as sensitive information.)
-* Credentials are decrypted on the fly when the user wants to view them to add an extra layer of security and enhance the user experience (save time upon unlocking). *
+* Credentials are decrypted on the fly when the user wants to view them to add an extra layer of security and enhance the user experience (save time upon unlocking). 
 
 # Pitfalls
 
