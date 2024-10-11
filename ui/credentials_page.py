@@ -49,8 +49,6 @@ class CredentialsPage(QMainWindow):
         # Fetch the credentials from the repository
         credentials = self.repository.get_all_credentials()  # Assuming this returns a list of tuples: (id, name, encrypted_username, encrypted_password)
 
-        print(credentials)
-
         if credentials:
             for id, name, encrypted_username, username_salt, username_nonce, encrypted_password, password_salt, password_nonce in credentials:
                 # Create a QListWidgetItem for each credential
